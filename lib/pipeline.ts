@@ -1,4 +1,4 @@
-import { demoEmails, demoStats } from '@/lib/demo-data'
+import { DEFAULT_CATEGORIES, type CategoryDef } from '@/lib/categories'
 import { fetchLatestEmails } from '@/lib/gmail'
 import { extractActions } from '@/lib/groq'
 import { classifyEmail } from '@/lib/jev'
@@ -19,10 +19,9 @@ function statsFrom(emails: MailEmail[]): DashboardStats {
   }
 }
 
-export async function processInbox(user: SessionUser) {
-  if (user.mode === 'demo' || !user.accessToken) {
-    await persistInbox(user.email, demoEmails)
-    return { emails: demoEmails, stats: demoStats, source: 'demo' as const }
+export async function processInbox(user: SessionUser, categories: CategoryDef[] = DEFAULT_CATEGORIES) {
+  if (!user.accessToken) {
+    throw new Error('No Gmail access token. Reconnect your Google account.')
   }
 
   const raw = await fetchLatestEmails(user.accessToken, 30)
@@ -32,6 +31,7 @@ export async function processInbox(user: SessionUser) {
         subject: item.subject,
         body: item.body,
         sender: `${item.sender} <${item.senderEmail}>`,
+        categories,
       })
       const groq = await extractActions({
         subject: item.subject,
