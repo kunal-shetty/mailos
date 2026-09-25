@@ -4,7 +4,7 @@ import { appUrl } from '@/lib/session'
 export async function GET() {
   const clientId = process.env.GOOGLE_CLIENT_ID
   if (!clientId) {
-    return NextResponse.redirect(new URL('/api/auth/demo', appUrl()))
+    return NextResponse.redirect(new URL('/?error=google-not-configured', appUrl()))
   }
 
   const params = new URLSearchParams({
