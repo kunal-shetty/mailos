@@ -1,4 +1,4 @@
-import type { GroqResult } from '@/types'
+import type { EmailAnalysis, GroqResult } from '@/types'
 
 function heuristic(subject: string, body: string, sender: string): GroqResult {
   const text = `${subject}\n${body}`
@@ -19,6 +19,66 @@ function heuristic(subject: string, body: string, sender: string): GroqResult {
   if (!actions.length) actions.push('Mark Done')
 
   return { company, date, time, amount, actions: [...new Set(actions)] }
+}
+
+type Summary = Pick<EmailAnalysis, 'summary' | 'highlights'>
+
+function heuristicSummary(subject: string, body: string): Summary {
+  const clean = body.replace(/\s+/g, ' ').trim()
+  const firstSentence = clean.match(/^.{30,240}?[.!?](\s|$)/)?.[0]?.trim()
+  return {
+    summary: firstSentence || clean.slice(0, 220) || subject,
+    highlights: [],
+  }
+}
+
+export async function summarizeEmail(input: {
+  subject: string
+  body: string
+  sender: string
+}): Promise<Summary> {
+  const key = process.env.GROQ_API_KEY
+  if (!key) return heuristicSummary(input.subject, input.body)
+
+  try {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${key}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'llama-3.1-8b-instant',
+        temperature: 0.2,
+        response_format: { type: 'json_object' },
+        messages: [
+          {
+            role: 'system',
+            content:
+              'Summarize one email for a busy reader. Return ONLY JSON: {summary, highlights}. summary is 2-3 plain sentences describing what the sender wants and any deadline or amount. highlights is 0-4 short strings, each a concrete fact (who, what, when, how much). No markdown, no preamble.',
+          },
+          {
+            role: 'user',
+            content: `Sender: ${input.sender}\nSubject: ${input.subject}\n\n${input.body.slice(0, 4000)}`,
+          },
+        ],
+      }),
+    })
+
+    if (!res.ok) return heuristicSummary(input.subject, input.body)
+    const data = await res.json()
+    const parsed = JSON.parse(data.choices?.[0]?.message?.content ?? '{}')
+    const summary = typeof parsed.summary === 'string' ? parsed.summary.trim() : ''
+    if (!summary) return heuristicSummary(input.subject, input.body)
+    return {
+      summary,
+      highlights: Array.isArray(parsed.highlights)
+        ? parsed.highlights.filter((h: unknown): h is string => typeof h === 'string').slice(0, 4)
+        : [],
+    }
+  } catch {
+    return heuristicSummary(input.subject, input.body)
+  }
 }
 
 export async function extractActions(input: {
