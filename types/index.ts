@@ -1,10 +1,5 @@
-export type Category =
-  | 'INTERVIEW'
-  | 'RECRUITER'
-  | 'INVOICE'
-  | 'FOLLOW_UP'
-  | 'SPAM'
-  | 'OTHER'
+// Category names are user-configurable (see lib/categories.ts), so this is
+export type Category = string
 
 export type Priority = 'HIGH' | 'MEDIUM' | 'LOW'
 
@@ -31,14 +26,22 @@ export type MailEmail = {
   senderEmail: string
   snippet: string
   body: string
+  bodyHtml: string | null
   receivedAt: string
   unread: boolean
   jev: JevResult
   groq: GroqResult
 }
 
+export type EmailAnalysis = {
+  jev: JevResult
+  groq: GroqResult
+  summary: string
+  highlights: string[]
+}
+
 export type SessionUser = {
-  mode: 'demo' | 'google'
+  mode: 'google'
   email: string
   name: string
   picture?: string
