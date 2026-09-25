@@ -2,12 +2,13 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Command, Inbox, Layers3, LogOut, Zap } from 'lucide-react'
+import { Command, Inbox, Layers3, LogOut, Tags, Zap } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const nav = [
   { href: '/dashboard', label: 'Overview', icon: Layers3 },
   { href: '/actions', label: 'Action queue', icon: Zap },
+  { href: '/settings', label: 'Categories', icon: Tags },
 ]
 
 export function Sidebar({ name }: { name: string }) {
