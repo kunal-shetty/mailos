@@ -41,12 +41,7 @@ export default async function LandingPage() {
           >
             Connect Gmail
           </a>
-          <a
-            href="/api/auth/demo"
-            className="inline-flex items-center justify-center rounded-lg border border-black/10 bg-white px-5 py-3 text-[13px] font-semibold text-black/70"
-          >
-            Preview sample inbox
-          </a>
+         
         </div>
         <div className="mt-16">
           <LandingInboxCard />
